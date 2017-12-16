@@ -1,7 +1,4 @@
-
-%%%%%%%%%%%%%%%
 % accurately solve a collision avoidance problem, optimizing the warm start path
-%%%%%%%%%%%%%%%
 
 function [stateSol, controlSol, solverTime, outSol] = ...
     PlanningDistOpt(x0,xF,m,N,Ts,carShape,stateWS,controlWS,XYbounds,nOb,vOb,A,b)
