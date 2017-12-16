@@ -1,7 +1,4 @@
-
-%%%%%%%%%%%%%%%
 % computes collision-free trajectory by appropriately reformulating the distance function
-%%%%%%%%%%%%%%%
 
 function [stateSol, controlSol, solverTime, outSol] = ...
     PlanningDist(x0,xF,N,Ts,carShape,stateWS,controlWS,XYbounds,nOb,vOb,A,b)
@@ -19,15 +16,11 @@ function [stateSol, controlSol, solverTime, outSol] = ...
         % total number of vertices
         nV = sum(vOb);
 
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % set ACADO
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         acadoSet('problemname', 'PlanningDist');        % Set your problemname. If you 
                                                         % skip this, all files will
                                                         % be named "myAcadoProblem"  
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % defining optimization variables
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                           
+        % defining optimization variables               
         DifferentialState x;                            % DifferentialState
         DifferentialState y;    
         DifferentialState vx;    
@@ -64,13 +57,11 @@ function [stateSol, controlSol, solverTime, outSol] = ...
         
         f = acado.DiscretizedDifferentialEquation(Ts);
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % cost function
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
         % (min time)+
         % (min states/control inputs)+      
         % (multiplier penalty)
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         Q = blkdiag(100,0.1,1,1);
         R = blkdiag(1,1);
         f.add( next(L) == 0.5*timeScale + 1*timeScale^2 +...
@@ -80,9 +71,8 @@ function [stateSol, controlSol, solverTime, outSol] = ...
             reg*n1^2+reg*n2^2+reg*n3^2+reg*n4^2+reg*n5^2+reg*n6^2+reg*n7^2 +...
             reg*n8^2+reg*n9^2+reg*n10^2+reg*n11^2+reg*n12^2);
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % dynamics of the car
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
         % - Double Integrator with forward Euler integration 
         % States:[x,y,vx,vy]  Control inputs:[ax ay]
         % - sampling time scaling, is identical over the horizon
@@ -101,18 +91,14 @@ function [stateSol, controlSol, solverTime, outSol] = ...
 %         f.add(next(v) == v + timeScale*Ts*ua);
 %         f.add(next(timeScale) == timeScale);    
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Optimal Control Problem
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         ocp = acado.OCP(0.0, N, N);                   % Set up the Optimal Control Problem (OCP)
                                                         % Start at 0s, control in 20 intervals upto 10s
         ocp.minimizeMayerTerm( L );                     % Minimize this Mayer Term
         ocp.subjectTo( f );                             % Your OCP is always subject to your 
                                                         % differential equation
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % bounds on states and inputs
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         ocp.subjectTo( XYbounds(1)+carShape(1) <= x <= XYbounds(2)-carShape(1)  );
     	ocp.subjectTo( XYbounds(3) <= y <= XYbounds(4)  );
         ocp.subjectTo( -4.0 <= ax <= 4.0  );
@@ -127,9 +113,7 @@ function [stateSol, controlSol, solverTime, outSol] = ...
         ocp.subjectTo( n7 >= 0.0); ocp.subjectTo( n8 >= 0.0); ocp.subjectTo( n9 >= 0.0);
         ocp.subjectTo( n10 >= 0.0); ocp.subjectTo( n11 >= 0.0); ocp.subjectTo( n12 >= 0.0);
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % start and finish point
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         ocp.subjectTo( 'AT_START', L  == 0.0    );
         ocp.subjectTo( 'AT_START', x  == x0(1)  );
         ocp.subjectTo( 'AT_START', y  == x0(2)  );
@@ -138,9 +122,7 @@ function [stateSol, controlSol, solverTime, outSol] = ...
         ocp.subjectTo( 'AT_END',   x  == xF(1) );
         ocp.subjectTo( 'AT_END',   y  == xF(2) );
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % obstacle avoidance constraints
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
         A1 = A(1:4,:);	% extract obstacle matrix associated with j-th obstacle
         b1 = b(1:4);	% extract obstacle matrix associated with j-th obstacle
         A2 = A(5:8,:);
@@ -160,9 +142,7 @@ function [stateSol, controlSol, solverTime, outSol] = ...
         ocp.subjectTo( -g*[n5;n6;n7;n8]+(A2*[x;y]-b2)'*[la5;la6;la7;la8] >= dmin );
         ocp.subjectTo( -g*[n9;n10;n11;n12]+(A3*[x;y]-b3)'*[la9;la10;la11;la12] >= dmin );
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Set up the optimization algorithm
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         algo = acado.OptimizationAlgorithm( ocp );
         algo.set( 'MAX_NUM_ITERATIONS', 750 );
         algo.set( 'KKT_TOLERANCE', 1e-1 );
@@ -170,9 +150,7 @@ function [stateSol, controlSol, solverTime, outSol] = ...
     %     algo.set( 'INTEGRATOR_TOLERANCE',   1e-3);  
     %     algo.set( 'ABSOLUTE_TOLERANCE',   1e-3   );
     
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % set initial guess
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         STATES_INIT = zeros(N+1,7);
         STATES_INIT(:,1:3) = stateWS(:,1:3);
         if length(controlWS(1,:)) ~= 27
@@ -195,9 +173,7 @@ function [stateSol, controlSol, solverTime, outSol] = ...
                                                         % this case active_damping_RUN
     solverTime = toc();
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% return values
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fprintf('Elapsed time: %f\n',solverTime);
     stateSol = out.STATES;
     controlSol = out.CONTROLS;
